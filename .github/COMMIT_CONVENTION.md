@@ -1,0 +1,47 @@
+### 제목(Subject line)
+- 최대 50자 이내
+- 명령문, 첫 글자 대문자
+- 마침표 금지
+- ex) `Feat: Add user login API`
+
+---
+
+### 본문(Body)
+- 제목과 한 줄 띄워 분리
+- 무엇을, 왜 했는지를 설명 ("어떻게"는 최소화)
+- 여러 줄은 "-"로 구분
+
+예시:
+- ```Add JWT authentication filter```
+- ```Required for securing login endpoint```
+
+---
+
+### 꼬리말(Footer, optional)
+- 이슈 연동 및 특이사항 기록
+- 키워드:
+    - Fixes        : 이슈 수정 중 (아직 해결되지 않은 경우)
+    - Resolves     : 이슈 해결했을 때 사용
+    - Ref          : 참고할 이슈가 있을 때 사용
+    - Related to   : 해당 커밋에 관련된 이슈 번호 (아직 해결되지 않은 경우)
+
+예시:
+- ```Fixes: #47```
+- ```Related to: #32, #21```
+- ```BREAKING CHANGE: login API response format changed```
+
+---
+
+### 타입(Type) 리스트
+- **feat**       : 새로운 기능 추가
+- **!Hotfix**     : 급하게 치명적인 버그를 고쳐야하는 경우
+- **fix**        : 버그 수정
+- **refactor**   : 리팩토링 (비즈니스 로직 변경 X)
+- **design**     : UI 디자인 변경 (CSS, 레이아웃, 반응형 등)
+- **style**      : 들여쓰기, 세미콜론, 코드 포맷팅 (비즈니스 로직 변경 X)
+- **docs**       : 문서 수정 (README 등)
+- **test**       : 테스트 코드 추가/수정
+- **build**      : 빌드 시스템/패키지 매니저 수정
+- **chore**      : 그 외 잡일 (config, 환경설정 등)
+- **rename**     : 파일/폴더명 변경
+- **remove**     : 파일/폴더 삭제  
