@@ -35,19 +35,23 @@ public class Login {
     @Column(nullable = false, length = 255)
     private String tokenValue;
 
+    @Column(nullable = false, length = 32)
+    private String salt;
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_sn", unique = true, nullable = false, columnDefinition = "INT UNSIGNED")
     private User user;
 
-    public Login(String loginEmail, String loginPassword, String tokenValue) {
+    public Login(String loginEmail, String loginPassword, String tokenValue, String salt) {
         this.loginEmail = loginEmail;
         this.loginPassword = loginPassword;
         this.tokenValue = tokenValue;
+        this.salt = salt;
     }
 
     @Builder
-    public static Login create(User user, String loginEmail, String loginPassword, String tokenValue) {
-        Login login = new Login(loginEmail, loginPassword, tokenValue);
+    public static Login create(User user, String loginEmail, String loginPassword, String tokenValue, String salt) {
+        Login login = new Login(loginEmail, loginPassword, tokenValue, salt);
         login.addUser(user);
         return login;
     }
@@ -57,9 +61,10 @@ public class Login {
         user.addLogin(this);
     }
 
-    public void update(String loginPassword, String tokenValue) {
+    public void update(String loginPassword, String tokenValue, String salt) {
         this.loginPassword = loginPassword;
         this.tokenValue = tokenValue;
+        this.salt = salt;
     }
 
     public void update(String tokenValue, LocalDateTime tokenExp) {
