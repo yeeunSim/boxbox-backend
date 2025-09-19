@@ -9,5 +9,5 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Slf4j
-public class LikeServiceImpl {
+public class LikeServiceImpl implements LikeService{
 }
