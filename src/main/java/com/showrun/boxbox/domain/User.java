@@ -88,11 +88,6 @@ public class User {
         fanRadio.addUser(this);
     }
 
-    public User update(Gender userGender){
-        this.userGender = userGender;
-        return this;
-    }
-
     public User update(Status userStatus, LocalDateTime userLastLoginAt){
         this.userStatus = userStatus;
         this.userLastLoginAt = userLastLoginAt;
