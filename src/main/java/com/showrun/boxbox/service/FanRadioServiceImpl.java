@@ -9,5 +9,5 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Slf4j
-public class FanRadioServiceImpl implements FanRadioService{
+public class FanRadioServiceImpl implements FanRadioService {
 }
