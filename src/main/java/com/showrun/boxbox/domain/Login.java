@@ -25,17 +25,16 @@ public class Login {
     @Column(nullable = false, updatable = false, length = 30)
     private String loginEmail;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 300)
     private String loginPassword;
 
     @CreatedDate
-    @Column(nullable = false)
     private LocalDateTime tokenExp;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String tokenValue;
 
-    @Column(nullable = false, length = 32)
+    @Column(length = 32)
     private String salt;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -52,13 +51,11 @@ public class Login {
     @Builder
     public static Login create(User user, String loginEmail, String loginPassword, String tokenValue, String salt) {
         Login login = new Login(loginEmail, loginPassword, tokenValue, salt);
-        login.addUser(user);
         return login;
     }
 
     public void addUser(User user) {
         this.user = user;
-        user.addLogin(this);
     }
 
     public void update(String loginPassword, String tokenValue, String salt) {

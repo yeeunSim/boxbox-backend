@@ -71,10 +71,9 @@ public class User {
     }
 
     @Builder
-    public static User create(Login login, FanRadio fanRadio, String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus) {
+    public static User create(Login login, String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus) {
         User user = new User(userNickname, userBirth, userGender, svcUsePcyAgmtYn, psInfoProcAgmtYn, userDeletedYn, userStatus);
         user.addLogin(login);
-        user.addFanRadio(fanRadio);
         return user;
     }
 
