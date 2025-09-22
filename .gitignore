@@ -42,3 +42,7 @@ out/
 ### Spring Boot Config ###
 /src/main/resources/application.properties
 
+### Logs
+logs/
+*.log
+
