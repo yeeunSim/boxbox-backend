@@ -71,7 +71,7 @@ public class FanRadio {
 
     public void addUser(User user) {
         this.user = user;
-        user.addFanRadio(this);
+        user.getFanRadios().add(this); // ✅ 주인쪽에서만 양방향 연결
     }
 
     public FanRadio update(String radioTextKor, String radioTextEng){

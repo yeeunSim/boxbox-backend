@@ -84,7 +84,6 @@ public class User {
 
     public void addFanRadio(FanRadio fanRadio) {
         this.fanRadios.add(fanRadio);
-        fanRadio.addUser(this);
     }
 
     public User update(Status userStatus, LocalDateTime userLastLoginAt){
