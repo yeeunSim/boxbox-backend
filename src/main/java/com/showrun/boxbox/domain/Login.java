@@ -49,7 +49,7 @@ public class Login {
     }
 
     @Builder
-    public static Login create(User user, String loginEmail, String loginPassword, String tokenValue, String salt) {
+    public static Login create(String loginEmail, String loginPassword, String tokenValue, String salt) {
         Login login = new Login(loginEmail, loginPassword, tokenValue, salt);
         return login;
     }

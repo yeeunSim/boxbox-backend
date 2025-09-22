@@ -59,9 +59,8 @@ public class FanRadio {
     }
 
     @Builder
-    public static FanRadio create(Like like, User user, String radioNickname, String radioTextKor, String radioTextEng, int radioLikeCount, boolean radioDeletedYn){
+    public static FanRadio create(User user, String radioNickname, String radioTextKor, String radioTextEng, int radioLikeCount, boolean radioDeletedYn){
         FanRadio fanRadio = new FanRadio(radioNickname, radioTextKor, radioTextEng, radioLikeCount, radioDeletedYn);
-        fanRadio.addLike(like);
         fanRadio.addUser(user);
         return fanRadio;
     }
