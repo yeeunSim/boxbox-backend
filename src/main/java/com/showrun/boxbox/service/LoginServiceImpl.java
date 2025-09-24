@@ -9,6 +9,7 @@ import com.showrun.boxbox.exception.ErrorCode;
 import com.showrun.boxbox.repository.LoginRepository;
 import com.showrun.boxbox.repository.UserRepository;
 import com.showrun.boxbox.security.JwtTokenProvider;
+import com.showrun.boxbox.security.JwtUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,27 +39,30 @@ public class LoginServiceImpl implements LoginService {
 
     @Transactional
     public TokenResponse login(String loginEmail, String loginPassword) {
-        // 1) 인증 (이 과정에서 UserDetailsService가 호출됨)
+        // 1) 인증
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginEmail, loginPassword)
         );
-        UserDetails principal = (UserDetails) auth.getPrincipal();
+        JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
 
-        // 2) 액세스/리프레시 발급
-        String access = jwtTokenProvider.createAccessToken(principal.getUsername(), principal.getAuthorities());
-        String refresh = jwtTokenProvider.createRefreshToken(principal.getUsername());
+        Long userSn = principal.getUserSn();
+        String email = principal.getEmail();
+
+        // 2) 액세스/리프레시 발급 (★ userSn 기반)
+        String access = jwtTokenProvider.createAccessToken(userSn, email, principal.getAuthorities());
+        String refresh = jwtTokenProvider.createRefreshToken(String.valueOf(userSn));
 
         // 3) 리프레시 토큰 저장
-        Login login = loginRepository.findByLoginEmail(principal.getUsername())
+        Login login = loginRepository.findByLoginEmail(email)
                 .orElseThrow(() -> new BoxboxException(ErrorCode.LOGIN_FAILED));
-        // refresh 만료 계산
-        Date refreshExp = jwtTokenProvider.getExpiration(refresh);
 
-        login.update(login.getLoginPassword(), refresh, login.getSalt()); // 비번 변경 없음(원형 유지)
+        Date refreshExp = jwtTokenProvider.getExpiration(refresh);
+        // 비밀번호는 그대로 유지
+        login.update(login.getLoginPassword(), refresh, login.getSalt());
         login.update(refresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
-        // 4) 사용자 마지막 로그인/상태 업데이트
-        User user = userRepository.findByLogin_LoginEmail(principal.getUsername())
+        // 4) 마지막 로그인/상태 업데이트
+        User user = userRepository.findById(userSn)
                 .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
         user.update(Status.ACTIVE, LocalDateTime.now());
 
@@ -71,10 +75,11 @@ public class LoginServiceImpl implements LoginService {
         if (!jwtTokenProvider.validate(refreshToken))
             throw new BoxboxException(ErrorCode.INVALID_TOKEN);
 
-        String email = jwtTokenProvider.getSubject(refreshToken);
+        // ★ subject=userSn
+        Long userSn = jwtTokenProvider.getUserId(refreshToken);
 
-        // 2) DB에 저장된 최신 리프레시와 일치하는지 (토큰 로테이션/탈취 방지)
-        Login login = loginRepository.findByLoginEmail(email)
+        // 2) DB에 저장된 최신 리프레시와 일치 확인
+        Login login = loginRepository.findByUser_UserSn(userSn)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "login not found"));
 
         if (!refreshToken.equals(login.getTokenValue()))
@@ -83,15 +88,15 @@ public class LoginServiceImpl implements LoginService {
         if (login.getTokenExp() != null && login.getTokenExp().isBefore(LocalDateTime.now()))
             throw new BoxboxException(ErrorCode.EXPIRED_TOKEN);
 
-        // 3) 새 토큰들 발급 + 로테이션 저장
-        // 권한은 기본 ROLE_USER만 있으므로 null 전달로 생성해도 무방하지만 일관성 위해…
-        String newAccess = jwtTokenProvider.createAccessToken(email, null);
-        String newRefresh = jwtTokenProvider.createRefreshToken(email);
+        // 3) 새 토큰 발급 (★ userSn 기반) + 로테이션 저장
+        String email = login.getLoginEmail(); // 액세스 토큰 클레임에 넣을 부가 정보
+        String newAccess = jwtTokenProvider.createAccessToken(userSn, email, null);
+        String newRefresh = jwtTokenProvider.createRefreshToken(String.valueOf(userSn));
 
-        Date refreshExp = io.jsonwebtoken.Jwts.parser().build()
-                .parseSignedClaims(newRefresh).getPayload().getExpiration();
+        Date refreshExp = jwtTokenProvider.getExpiration(newRefresh);
         login.update(newRefresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
         return new TokenResponse(newAccess, newRefresh);
     }
+
 }
