@@ -34,16 +34,18 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(String subject, Collection<? extends GrantedAuthority> authorities) {
+    // com.showrun.boxbox.security.JwtTokenProvider
+    public String createAccessToken(Long userSn, String email, Collection<? extends GrantedAuthority> authorities) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + accessValiditySec * 1000);
         return Jwts.builder()
-                .subject(subject)
+                .subject(String.valueOf(userSn))   // ★ subject = userSn
+                .claim("email", email)              // 부가 정보 (선택)
                 .claim("roles", authorities == null ? null :
                         authorities.stream().map(GrantedAuthority::getAuthority).toList())
                 .issuedAt(now)
                 .expiration(exp)
-                .signWith(key, Jwts.SIG.HS256)   // ★ 서명
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -66,6 +68,15 @@ public class JwtTokenProvider {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Long getUserId(String jwt) {
+        return Long.valueOf(parse(jwt).getSubject());
+    }
+
+    public String getEmail(String jwt) {
+        Object v = parse(jwt).get("email");
+        return v == null ? null : v.toString();
     }
 
     public String getSubject(String jwt) {
