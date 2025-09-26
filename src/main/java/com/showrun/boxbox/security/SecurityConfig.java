@@ -1,4 +1,4 @@
-package com.showrun.boxbox.config;
+package com.showrun.boxbox.security;
 
 import com.showrun.boxbox.security.JwtAuthenticationFilter;
 import com.showrun.boxbox.security.JwtTokenProvider;
