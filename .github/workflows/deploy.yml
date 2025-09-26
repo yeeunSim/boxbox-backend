@@ -1,7 +1,7 @@
 name: boxbox test 배포
 
 on:
-  pull_request:
+  push:
     branches: [ beta-release ]
 
 jobs:
