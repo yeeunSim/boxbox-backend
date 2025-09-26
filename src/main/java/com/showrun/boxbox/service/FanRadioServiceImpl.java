@@ -15,6 +15,8 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,6 +120,25 @@ public class FanRadioServiceImpl implements FanRadioService {
         }
 
         return new FanRadioDeleteResponse(radioSn, true);
+    }
+
+    @Override
+    public List<DriverNumberListResponse> getDriverNumberList() {
+        List<DriverNumberProjection> driverNumberList = fanRadioRepository.getDriverNumberList();
+
+        return driverNumberList.stream().map(
+                p -> new DriverNumberListResponse(
+                        p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
+                ))
+                .toList();
+    }
+
+    @Override
+    public FanRadioResponse getRadioByRadioSn(Long radioSn) {
+        FanRadio fanRadio = fanRadioRepository.findById(radioSn)
+                .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
+
+        return FanRadioResponse.from(fanRadio);
     }
 
     @Override
