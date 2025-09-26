@@ -2,15 +2,17 @@ package com.showrun.boxbox.service;
 
 import com.showrun.boxbox.domain.FanRadio;
 import com.showrun.boxbox.domain.User;
-import com.showrun.boxbox.dto.fanradio.FanRadioDeleteResponse;
-import com.showrun.boxbox.dto.fanradio.FanRadioRequest;
-import com.showrun.boxbox.dto.fanradio.FanRadioResponse;
+import com.showrun.boxbox.dto.fanradio.*;
+import com.showrun.boxbox.exception.BoxboxException;
+import com.showrun.boxbox.exception.ErrorCode;
 import com.showrun.boxbox.repository.FanRadioRepository;
 import com.showrun.boxbox.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -59,5 +61,24 @@ public class FanRadioServiceImpl implements FanRadioService {
         }
 
         return new FanRadioDeleteResponse(radioId, true);
+    }
+
+    @Override
+    public List<DriverNumberListResponse> getDriverNumberList() {
+        List<DriverNumberProjection> driverNumberList = fanRadioRepository.getDriverNumberList();
+
+        return driverNumberList.stream().map(
+                p -> new DriverNumberListResponse(
+                        p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
+                ))
+                .toList();
+    }
+
+    @Override
+    public FanRadioResponse getRadioByRadioSn(Long radioSn) {
+        FanRadio fanRadio = fanRadioRepository.findById(radioSn)
+                .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
+
+        return FanRadioResponse.from(fanRadio);
     }
 }
