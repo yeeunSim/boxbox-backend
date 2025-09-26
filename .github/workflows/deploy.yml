@@ -43,7 +43,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USERNAME }}
+          username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           script: |
             APP_DIR=/opt/boxbox/app
