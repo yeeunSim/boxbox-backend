@@ -36,7 +36,7 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           source: ${{ steps.artifact.outputs.jar_file }}
-          target: /root/deploy/boxbox-0.0.1-SNAPSHOT.jar
+          target: /root/deploy/
 
 
       - name: 서버에서 실행 교체
