@@ -46,9 +46,8 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           script: |
-            APP_DIR=/opt/boxbox/app
-            RELEASE_DIR=$APP_DIR/releases
-            LATEST_JAR=$(ls -1t $RELEASE_DIR/*.jar | head -n1)
+            APP_DIR=/root/deploy/
+            LATEST_JAR=$(ls -1t $APP_DIR/*.jar | head -n1)
       
             # 기존 프로세스 죽이기
             pkill -f "java .*current.jar" || true
