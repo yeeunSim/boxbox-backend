@@ -49,7 +49,6 @@ public interface FanRadioRepository extends JpaRepository<FanRadio, Long> {
         WHERE CAST(radio.radio_num AS CHAR) REGEXP '^7+$'
     """, nativeQuery = true)
     List<DriverNumberProjection> getDriverNumberList();
-}
 
     @Query("""
         SELECT f FROM FanRadio f

@@ -13,12 +13,10 @@ import java.util.List;
 public interface FanRadioService {
 
     FanRadioResponse createRadio(String loginEmail, FanRadioRequest request);
-    FanRadioDeleteResponse deleteMyRadio(String loginEmail, Long radioId);
 
     List<DriverNumberListResponse> getDriverNumberList();
 
     FanRadioResponse getRadioByRadioSn(Long radioSn);
-}
 
     FanRadioResponse patchRadio(String loginEmail, Long radioSn, FanRadioPatchRequest request);
 

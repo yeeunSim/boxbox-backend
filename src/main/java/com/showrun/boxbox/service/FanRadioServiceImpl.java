@@ -140,7 +140,6 @@ public class FanRadioServiceImpl implements FanRadioService {
 
         return FanRadioResponse.from(fanRadio);
     }
-}
 
     @Override
     public Slice<FanRadioRankResponse> getRadios(RadioSortType sort, Pageable pageable) {
