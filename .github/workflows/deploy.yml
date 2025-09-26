@@ -1,0 +1,60 @@
+name: boxbox test 배포
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+
+      - name: JDK 21 설치
+        uses: actions/setup-java@v4
+                - with:
+                distribution: temurin
+                java-version: 21
+
+
+      - name: 빌드
+        run: ./gradlew clean build -x test
+
+
+      - name: JAR 파일 찾기
+        id: artifact
+        run: echo "jar_file=$(ls build/libs/*SNAPSHOT.jar | head -n1)" >> $GITHUB_OUTPUT
+
+
+      - name: 서버로 JAR 업로드
+        uses: appleboy/scp-action@v0.1.7
+                - with:
+                host: ${{ secrets.NCP_HOST }}
+                username: ${{ secrets.NCP_USERNAME }}
+                key: ${{ secrets.NCP_PRIVATE_KEY }}
+                source: ${{ steps.artifact.outputs.jar_file }}
+                target: /opt/boxbox/app/releases/
+
+
+      - name: 서버에서 실행 교체
+        uses: appleboy/ssh-action@v1.0.3
+                - with:
+                host: ${{ secrets.NCP_HOST }}
+                username: ${{ secrets.NCP_USERNAME }}
+                key: ${{ secrets.NCP_PRIVATE_KEY }}
+    script: |
+      APP_DIR=/opt/boxbox/app
+      RELEASE_DIR=$APP_DIR/releases
+      LATEST_JAR=$(ls -1t $RELEASE_DIR/*.jar | head -n1)
+      
+        # 기존 프로세스 죽이기
+        pkill -f "java .*current.jar" || true
+      
+        # current.jar 링크 갱신
+        ln -sfn "$LATEST_JAR" $APP_DIR/current.jar
+      
+        # 새 jar 실행 (백그라운드)
+        nohup java -jar $APP_DIR/current.jar > $APP_DIR/app.out 2>&1 &
