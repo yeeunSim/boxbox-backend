@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FanRadioDeleteResponse {
-    private Long radioId;
+    private Long radioSn;
     private boolean deleted;
 }
