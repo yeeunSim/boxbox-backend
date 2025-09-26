@@ -60,7 +60,10 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<FanRadio> fanRadios = new ArrayList<>();
 
-    public User(String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus) {
+    @Column(nullable = false)
+    private boolean userLang = false;
+
+    public User(String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus, boolean userLang) {
         this.userNickname = userNickname;
         this.userBirth = userBirth;
         this.userGender = userGender;
@@ -68,11 +71,12 @@ public class User {
         this.psInfoProcAgmtYn = psInfoProcAgmtYn;
         this.userDeletedYn = userDeletedYn;
         this.userStatus = userStatus;
+        this.userLang = userLang;
     }
 
     @Builder
-    public static User create(Login login, String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus) {
-        User user = new User(userNickname, userBirth, userGender, svcUsePcyAgmtYn, psInfoProcAgmtYn, userDeletedYn, userStatus);
+    public static User create(Login login, String userNickname, LocalDate userBirth, Gender userGender, boolean svcUsePcyAgmtYn, boolean psInfoProcAgmtYn, boolean userDeletedYn, Status userStatus, boolean userLang) {
+        User user = new User(userNickname, userBirth, userGender, svcUsePcyAgmtYn, psInfoProcAgmtYn, userDeletedYn, userStatus, userLang);
         user.addLogin(login);
         return user;
     }
@@ -86,9 +90,15 @@ public class User {
         this.fanRadios.add(fanRadio);
     }
 
-    public User update(Status userStatus, LocalDateTime userLastLoginAt){
+    public User update(Status userStatus, LocalDateTime userLastLoginAt) {
         this.userStatus = userStatus;
         this.userLastLoginAt = userLastLoginAt;
+        return this;
+    }
+
+    public User updateLang(boolean userLang) {
+        this.userLang = userLang;
+
         return this;
     }
 }

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FanRadioRequest {
+public class FanRadioPatchRequest {
     private String lang; // 입력 언어 식별자("kor" | "eng")
     private String text; // 원문 텍스트
 }

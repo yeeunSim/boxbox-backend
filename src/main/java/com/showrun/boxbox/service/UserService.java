@@ -4,4 +4,6 @@ import com.showrun.boxbox.dto.user.UserInfo;
 
 public interface UserService {
     String userRegister(UserInfo userInfo);
+
+    boolean updateLanguagePre(Long userSn, boolean userLang);
 }

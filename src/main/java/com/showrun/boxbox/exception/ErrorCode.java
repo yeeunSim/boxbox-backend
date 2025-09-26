@@ -26,6 +26,7 @@ public enum ErrorCode {
     RADIO_DELETE_FAILED(HttpStatus.BAD_REQUEST, "RADIO_004", "라디오 삭제에 실패했습니다."),
     RADIO_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "RADIO_005", "라디오 조회에 실패했습니다."),
     RADIO_ALREADY_DELETE(HttpStatus.NOT_FOUND, "RADIO_006", "이미 삭제된 라디오입니다."),
+    RADIO_CREATE_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "RADIO_007", "라디오는 최대 3개까지 작성할 수 있습니다."),
 
     // 언어 설정
     LANG_CHANGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LANG_001", "언어 변경에 실패했습니다."),

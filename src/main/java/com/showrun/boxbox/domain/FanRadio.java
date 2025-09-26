@@ -49,7 +49,6 @@ public class FanRadio {
     @OneToMany(mappedBy = "fanRadio")
     private List<Like> likes = new ArrayList<>();
 
-
     public FanRadio(String radioNickname, String radioTextKor, String radioTextEng, int radioLikeCount, boolean radioDeletedYn) {
         this.radioNickname = radioNickname;
         this.radioTextKor = radioTextKor;
@@ -71,7 +70,7 @@ public class FanRadio {
 
     public void addUser(User user) {
         this.user = user;
-        user.getFanRadios().add(this); // ✅ 주인쪽에서만 양방향 연결
+        user.getFanRadios().add(this); // 양방향 연결을 한 곳에서 고정
     }
 
     public FanRadio update(String radioTextKor, String radioTextEng){
@@ -91,5 +90,4 @@ public class FanRadio {
     public void addLikeCount(Integer like) {
         this.radioLikeCount = like;
     }
-
 }
