@@ -89,4 +89,13 @@ public class FanRadioController {
     ) {
         return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn));
     }
+
+    @GetMapping("/my-page/radio-list")
+    public ResponseEntity<ApiResponse<List<FanRadioResponse>>> getMyFanRadios(
+            @AuthenticationPrincipal JwtUserDetails userDetails
+    ) {
+        String loginEmail = userDetails.getUsername();
+        List<FanRadioResponse> radios = fanRadioService.getMyRadios(loginEmail);
+        return ResponseEntity.ok(ApiResponse.ok("내 라디오 목록 조회 성공", radios));
+    }
 }
