@@ -44,4 +44,11 @@ public class UserController {
             throw new BoxboxException(ErrorCode.LANG_CHANGE_FAILED, e);
         }
     }
+
+    @GetMapping("/sign-up/nickname-check")
+    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestParam("nickname") String nickname) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("사용 가능한 닉네임입니다.", userService.ensureNicknameAvailable(nickname)));
+    }
 }
