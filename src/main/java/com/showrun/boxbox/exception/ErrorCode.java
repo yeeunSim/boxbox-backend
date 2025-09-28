@@ -32,9 +32,6 @@ public enum ErrorCode {
     // 언어 설정
     LANG_CHANGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LANG_001", "언어 변경에 실패했습니다."),
 
-    // 번역 관련 에러
-    TRANSLATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "TRN_001", "번역 서비스 호출에 실패했습니다."),
-
     // 인증 관련 에러
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_001", "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_002", "만료된 토큰입니다.");
