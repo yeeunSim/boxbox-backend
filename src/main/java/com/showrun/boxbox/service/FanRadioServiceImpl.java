@@ -15,8 +15,6 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class FanRadioServiceImpl implements FanRadioService {
+
     private final FanRadioRepository fanRadioRepository;
     private final UserRepository userRepository;
     private final PapagoService papagoService;
@@ -35,39 +34,30 @@ public class FanRadioServiceImpl implements FanRadioService {
         User user = userRepository.findByLogin_LoginEmail(loginEmail)
                 .orElseThrow(() -> new BoxboxException(ErrorCode.USER_NOT_FOUND));
 
-        try {
-            long myActiveCount = fanRadioRepository.countByUser_UserSnAndRadioDeletedYnFalse(user.getUserSn());
-            if (myActiveCount >= 3) {
-                throw new BoxboxException(ErrorCode.RADIO_CREATE_LIMIT_EXCEEDED);
-            }
-
-            var translated = papagoService.translation(request.getLang(), request.getText());
-            String textKor = translated.getTranslationKor();
-            String textEng = translated.getTranslationEng();
-
-            FanRadio fanRadio = FanRadio.builder()
-                    .user(user)
-                    .radioNickname(user.getUserNickname())
-                    .radioTextKor(textKor)
-                    .radioTextEng(textEng)
-                    .radioLikeCount(0)
-                    .radioDeletedYn(false)
-                    .build();
-
-            FanRadio saved = fanRadioRepository.save(fanRadio);
-
-            return new FanRadioResponse(
-                    saved.getRadioSn(),
-                    saved.getRadioTextKor(),
-                    saved.getRadioTextEng(),
-                    saved.getUser().getUserNickname()
-            );
-        } catch (BoxboxException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to create radio for {}: {}", loginEmail, e.getMessage(), e);
-            throw new BoxboxException(ErrorCode.RADIO_CREATE_FAILED, e);
+        long myActiveCount = fanRadioRepository.countByUser_UserSnAndRadioDeletedYnFalse(user.getUserSn());
+        if (myActiveCount >= 3) {
+            throw new BoxboxException(ErrorCode.RADIO_CREATE_LIMIT_EXCEEDED);
         }
+
+        Translation translated = translateOrThrow(request.getLang(), request.getText());
+
+        FanRadio saved = fanRadioRepository.save(
+                FanRadio.builder()
+                        .user(user)
+                        .radioNickname(user.getUserNickname())
+                        .radioTextKor(translated.kor())
+                        .radioTextEng(translated.eng())
+                        .radioLikeCount(0)
+                        .radioDeletedYn(false)
+                        .build()
+        );
+
+        return new FanRadioResponse(
+                saved.getRadioSn(),
+                saved.getRadioTextKor(),
+                saved.getRadioTextEng(),
+                saved.getUser().getUserNickname()
+        );
     }
 
     @Override
@@ -76,29 +66,19 @@ public class FanRadioServiceImpl implements FanRadioService {
         User user = userRepository.findByLogin_LoginEmail(loginEmail)
                 .orElseThrow(() -> new BoxboxException(ErrorCode.USER_NOT_FOUND));
 
-        try {
-            FanRadio radio = fanRadioRepository
-                    .findByRadioSnAndUser_UserSnAndRadioDeletedYnFalse(radioSn, user.getUserSn())
-                    .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
+        FanRadio radio = fanRadioRepository
+                .findByRadioSnAndUser_UserSnAndRadioDeletedYnFalse(radioSn, user.getUserSn())
+                .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
 
-            var translated = papagoService.translation(request.getLang(), request.getText());
-            String textKor = translated.getTranslationKor();
-            String textEng = translated.getTranslationEng();
+        Translation translated = translateOrThrow(request.getLang(), request.getText());
+        radio.update(translated.kor(), translated.eng()); // 더티 체킹 반영
 
-            radio.update(textKor, textEng); // 더티 체킹으로 반영.
-
-            return new FanRadioResponse(
-                    radio.getRadioSn(),
-                    radio.getRadioTextKor(),
-                    radio.getRadioTextEng(),
-                    radio.getUser().getUserNickname()
-            );
-        } catch (BoxboxException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to patch radio {} by {}: {}", radioSn, loginEmail, e.getMessage(), e);
-            throw new BoxboxException(ErrorCode.RADIO_UPDATE_FAILED, e);
-        }
+        return new FanRadioResponse(
+                radio.getRadioSn(),
+                radio.getRadioTextKor(),
+                radio.getRadioTextEng(),
+                radio.getUser().getUserNickname()
+        );
     }
 
     @Override
@@ -114,7 +94,7 @@ public class FanRadioServiceImpl implements FanRadioService {
             throw new BoxboxException(ErrorCode.RADIO_ALREADY_DELETE);
         }
 
-        int updated = fanRadioRepository.softDeleteByOwner(radioSn, user.getUserSn()); // 경쟁 조건 방지 쿼리.
+        int updated = fanRadioRepository.softDeleteByOwner(radioSn, user.getUserSn());
         if (updated == 0) {
             throw new BoxboxException(ErrorCode.RADIO_DELETE_FAILED);
         }
@@ -127,9 +107,9 @@ public class FanRadioServiceImpl implements FanRadioService {
         List<DriverNumberProjection> driverNumberList = fanRadioRepository.getDriverNumberList();
 
         return driverNumberList.stream().map(
-                p -> new DriverNumberListResponse(
-                        p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
-                ))
+                        p -> new DriverNumberListResponse(
+                                p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
+                        ))
                 .toList();
     }
 
@@ -143,48 +123,43 @@ public class FanRadioServiceImpl implements FanRadioService {
 
     @Override
     public Slice<FanRadioRankResponse> getRadios(RadioSortType sort, Pageable pageable) {
-        try {
-            Slice<FanRadio> slice =
-                    (sort == RadioSortType.POPULAR)
-                            ? fanRadioRepository.findPopular(pageable)
-                            : fanRadioRepository.findLatest(pageable);
+        Slice<FanRadio> slice = (sort == RadioSortType.POPULAR)
+                ? fanRadioRepository.findPopular(pageable)
+                : fanRadioRepository.findLatest(pageable);
 
-            long startRank = (long) pageable.getPageNumber() * pageable.getPageSize() + 1; // 페이지 기준 순위 계산.
-            List<FanRadioRankResponse> mapped = new ArrayList<>(slice.getNumberOfElements());
-            for (int i = 0; i < slice.getNumberOfElements(); i++) {
-                FanRadio f = slice.getContent().get(i);
-                mapped.add(FanRadioRankResponse.fromWithRank(f, startRank + i));
-            }
-            return new SliceImpl<>(mapped, pageable, slice.hasNext());
-        } catch (BoxboxException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to read radios (sort={}, pageable={}): {}", sort, pageable, e.getMessage(), e);
-            throw new BoxboxException(ErrorCode.RADIO_READ_FAILED, e);
+        long startRank = (long) pageable.getPageNumber() * pageable.getPageSize() + 1;
+        List<FanRadioRankResponse> mapped = new ArrayList<>(slice.getNumberOfElements());
+        for (int i = 0; i < slice.getNumberOfElements(); i++) {
+            FanRadio f = slice.getContent().get(i);
+            mapped.add(FanRadioRankResponse.fromWithRank(f, startRank + i));
         }
+        return new SliceImpl<>(mapped, pageable, slice.hasNext());
     }
 
     @Override
     public Slice<FanRadioRankResponse> searchRadios(String nickname, RadioSortType sort, Pageable pageable) {
-        try {
-            Slice<FanRadio> slice =
-                    (sort == RadioSortType.POPULAR)
-                            ? fanRadioRepository.searchPopular(nickname, pageable)
-                            : fanRadioRepository.searchLatest(nickname, pageable);
+        Slice<FanRadio> slice = (sort == RadioSortType.POPULAR)
+                ? fanRadioRepository.searchPopular(nickname, pageable)
+                : fanRadioRepository.searchLatest(nickname, pageable);
 
-            long startRank = (long) pageable.getPageNumber() * pageable.getPageSize() + 1; // 페이지 기준 순위 계산.
-            List<FanRadioRankResponse> mapped = new ArrayList<>(slice.getNumberOfElements());
-            for (int i = 0; i < slice.getNumberOfElements(); i++) {
-                FanRadio f = slice.getContent().get(i);
-                mapped.add(FanRadioRankResponse.fromWithRank(f, startRank + i));
-            }
-            return new SliceImpl<>(mapped, pageable, slice.hasNext());
-        } catch (BoxboxException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to search radios (nickname={}, sort={}, pageable={}): {}",
-                    nickname, sort, pageable, e.getMessage(), e);
-            throw new BoxboxException(ErrorCode.RADIO_READ_FAILED, e);
+        long startRank = (long) pageable.getPageNumber() * pageable.getPageSize() + 1;
+        List<FanRadioRankResponse> mapped = new ArrayList<>(slice.getNumberOfElements());
+        for (int i = 0; i < slice.getNumberOfElements(); i++) {
+            FanRadio f = slice.getContent().get(i);
+            mapped.add(FanRadioRankResponse.fromWithRank(f, startRank + i));
+        }
+        return new SliceImpl<>(mapped, pageable, slice.hasNext());
+    }
+
+    private Translation translateOrThrow(String lang, String text) {
+        try {
+            var t = papagoService.translation(lang, text);
+            return new Translation(t.getTranslationKor(), t.getTranslationEng());
+        } catch (RuntimeException e) {
+            log.error("Translation failed (lang={}, textLength={}): {}", lang, text != null ? text.length() : 0, e.getMessage(), e);
+            throw new BoxboxException(ErrorCode.TRANSLATION_FAILED, e);
         }
     }
+
+    private record Translation(String kor, String eng) {}
 }
