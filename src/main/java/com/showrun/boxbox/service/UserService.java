@@ -6,4 +6,6 @@ public interface UserService {
     String userRegister(UserInfo userInfo);
 
     boolean updateLanguagePre(Long userSn, boolean userLang);
+
+    boolean ensureNicknameAvailable(String nickname);
 }
