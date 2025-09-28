@@ -187,4 +187,22 @@ public class FanRadioServiceImpl implements FanRadioService {
             throw new BoxboxException(ErrorCode.RADIO_READ_FAILED, e);
         }
     }
+
+    @Override
+    public List<FanRadioResponse> getMyRadios(String loginEmail) {
+        User user = userRepository.findByLogin_LoginEmail(loginEmail)
+                .orElseThrow(() -> new IllegalArgumentException("user not found" + loginEmail));
+
+        List<FanRadio> radios = fanRadioRepository
+                .myAllList(user.getUserNickname());
+
+        return radios.stream()
+                .map(r -> new FanRadioResponse(
+                        r.getRadioSn(),
+                        r.getRadioNickname(),
+                        r.getRadioTextKor(),
+                        r.getRadioTextEng()
+                ))
+                .toList();
+    }
 }
