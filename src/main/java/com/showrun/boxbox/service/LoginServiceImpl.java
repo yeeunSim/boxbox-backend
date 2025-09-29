@@ -66,7 +66,7 @@ public class LoginServiceImpl implements LoginService {
                 .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
         user.update(Status.ACTIVE, LocalDateTime.now());
 
-        return new TokenResponse(access, refresh);
+        return new TokenResponse(access);
     }
 
     @Transactional
@@ -96,7 +96,7 @@ public class LoginServiceImpl implements LoginService {
         Date refreshExp = jwtTokenProvider.getExpiration(newRefresh);
         login.update(newRefresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
-        return new TokenResponse(newAccess, newRefresh);
+        return new TokenResponse(newAccess);
     }
 
 }
