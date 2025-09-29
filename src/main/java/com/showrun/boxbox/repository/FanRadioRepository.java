@@ -89,4 +89,11 @@ public interface FanRadioRepository extends JpaRepository<FanRadio, Long> {
                 ORDER BY f.radioSn DESC
             """)
     List<FanRadio> myAllList(@Param("userNickname") String userNickname);
+
+    @Query("SELECT fr FROM FanRadio fr WHERE fr.radioSn = :radioSn AND fr.radioDeletedYn = false")
+    Optional<FanRadio> findAlive(@Param("radioSn") Long radioSn);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE FanRadio fr SET fr.radioLikeCount = :likeCount WHERE fr.radioSn = :radioSn")
+    int updateLikeCount(@Param("radioSn") Long radioSn, @Param("likeCount") int likeCount);
 }
