@@ -1,11 +1,8 @@
 package com.showrun.boxbox.service;
 
 
-import com.showrun.boxbox.domain.Gender;
 import com.showrun.boxbox.domain.Login;
-import com.showrun.boxbox.domain.Status;
 import com.showrun.boxbox.domain.User;
-import com.showrun.boxbox.dto.common.ApiResponse;
 import com.showrun.boxbox.dto.user.UserInfo;
 import com.showrun.boxbox.exception.BoxboxException;
 import com.showrun.boxbox.exception.ErrorCode;
@@ -13,12 +10,10 @@ import com.showrun.boxbox.repository.LoginRepository;
 import com.showrun.boxbox.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.regex.Pattern;
 
 import static com.showrun.boxbox.domain.Status.ACTIVE;
@@ -28,11 +23,12 @@ import static com.showrun.boxbox.domain.Status.ACTIVE;
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
+    private static final Pattern NICKNAME_RULE = Pattern.compile("^[A-Za-z0-9_]{1,10}$");
+    private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     private final UserRepository userRepository;
     private final LoginRepository loginRepository;
     private final PasswordEncoder passwordEncoder;
-
-    private static final Pattern NICKNAME_RULE = Pattern.compile("^[A-Za-z0-9_]{1,10}$");
 
     @Override
     @Transactional
@@ -92,4 +88,19 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
+    @Override
+    @Transactional
+    public boolean ensureEmailAvailable(String email) {
+        if (email == null || !EMAIL_RULE.matcher(email).matches()) {
+            throw new BoxboxException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        boolean flag = loginRepository.existsByLoginEmail(email);
+
+        if (flag) {
+            throw new BoxboxException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        return true;
+    }
 }
