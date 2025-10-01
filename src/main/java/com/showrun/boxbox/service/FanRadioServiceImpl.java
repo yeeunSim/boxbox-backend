@@ -106,9 +106,9 @@ public class FanRadioServiceImpl implements FanRadioService {
         List<DriverNumberProjection> driverNumberList = fanRadioRepository.getDriverNumberList();
 
         return driverNumberList.stream().map(
-                p -> new DriverNumberListResponse(
-                        p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
-                ))
+                        p -> new DriverNumberListResponse(
+                                p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
+                        ))
                 .toList();
     }
 
