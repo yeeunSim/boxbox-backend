@@ -16,11 +16,9 @@ public class WebConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        // 개발/운영에 맞게 정확한 Origin으로 바꾸세요
         cfg.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "http://localhost:3000",
-                "http://localhost:3000/**"
+                "http://localhost:3000"
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
