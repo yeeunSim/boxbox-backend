@@ -41,6 +41,8 @@ jobs:
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           source: ${{ steps.artifact.outputs.jar_file }}
           target: /root/deploy/releases/
+          strip_components: 2
+          overwrite: true
 
 
       - name: 서버에서 실행 교체
