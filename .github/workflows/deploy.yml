@@ -58,4 +58,4 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl restart boxbox.service
             sudo systemctl status boxbox.service --no-pager || true
-            journalctl -u boxbox.service -n 80 --no-pagr || true
+            journalctl -u boxbox.service -n 80 --no-pager || true
