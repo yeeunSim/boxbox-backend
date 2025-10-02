@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           source: ${{ steps.artifact.outputs.jar_file }}
-          target: /root/deploy/
+          target: /root/deploy/releases/
 
 
       - name: 서버에서 실행 교체
@@ -52,29 +52,31 @@ jobs:
           script: |
             set -Eeuo pipefail
             APP_DIR=/root/deploy
-            TARGET="$APP_DIR/boxbox-latest.jar"
-            
-            # 최신 JAR: 심볼릭 링크/타깃 제외, 실제 파일만
-            LATEST_JAR=$(
-              find "$APP_DIR" -maxdepth 1 -type f -name "*.jar" ! -path "$TARGET" \
-                -printf '%T@ %p\n' | sort -nr | awk 'NR==1{print $2}'
-            )
-            echo "LATEST_JAR=${LATEST_JAR:-<none>}"
-  
-            if [[ -n "${LATEST_JAR:-}" ]]; then
-              SRC_REAL="$(readlink -f "$LATEST_JAR")"
-              TGT_REAL="$(readlink -f "$TARGET" 2>/dev/null || true)"
-              if [[ "$SRC_REAL" != "$TGT_REAL" ]]; then
-                ln -sfn "$SRC_REAL" "$TARGET"
-                echo "Updated symlink: $TARGET -> $SRC_REAL"
-              else
-                echo "Symlink already up-to-date."
-              fi
-            else
-              echo "No JAR found to link."
+            REL_DIR=$APP_DIR/releases
+            RUN_LINK=$APP_DIR/boxbox-latest.jar
+
+            mkdir -p "$REL_DIR"
+
+            # releases 에서 최신 JAR (regular file만)
+            NEW_JAR="$(find "$REL_DIR" -maxdepth 1 -type f -name '*.jar' -printf '%T@ %p\n' \
+                       | sort -nr | awk 'NR==1{print $2}')"
+
+            if [ -z "${NEW_JAR:-}" ]; then
+              echo "ERROR: $REL_DIR 에 JAR가 없습니다." >&2
+              exit 1
             fi
-  
+
+            # 실행 링크 갱신 (same file 에러 방지)
+            CUR="$(readlink -f "$RUN_LINK" 2>/dev/null || true)"
+            TGT="$(readlink -f "$NEW_JAR")"
+            if [ "$CUR" != "$TGT" ]; then
+              ln -sfn "$TGT" "$RUN_LINK"
+              printf 'Updated symlink: %s -> %s\n' "$RUN_LINK" "$TGT"
+            else
+              echo "Symlink already up-to-date."
+            fi
+
             sudo systemctl daemon-reload
-            sudo systemctl restart boxbox.service
+            sudo systemctl restart boxbox.service || true
             sudo systemctl status boxbox.service --no-pager || true
-            journalctl -u boxbox.service -n 80 --no-pager || true
+            journalctl -u boxbox.service -n 120 --no-pager || true
