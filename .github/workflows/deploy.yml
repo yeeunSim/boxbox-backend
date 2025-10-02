@@ -30,7 +30,7 @@ jobs:
 
       - name: JAR 파일 찾기
         id: artifact
-        run: echo "jar_file=$(ls build/libs/*SNAPSHOT.jar | head -n1)" >> $GITHUB_OUTPUT
+        run: echo "jar_file=$(ls -1t build/libs/*SNAPSHOT.jar | head -n1)" >> $GITHUB_OUTPUT
 
 
       - name: 서버로 JAR 업로드
@@ -50,12 +50,12 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           script: |
-            APP_DIR=/root/deploy/
+            set -euo pipefail
+            APP_DIR=/root/deploy
             LATEST_JAR=$(ls -1t $APP_DIR/*.jar | head -n1)
-            
+            echo "LATEST_JAR=$LATEST_JAR"
             ln -sfn "$LATEST_JAR" $APP_DIR/boxbox-0.0.1-SNAPSHOT.jar
-
             sudo systemctl daemon-reload
             sudo systemctl restart boxbox.service
-
-            sudo systemctl status boxbox.service --no-pager
+            sudo systemctl status boxbox.service --no-pager || true
+            journalctl -u boxbox.service -n 80 --no-pagr || true
