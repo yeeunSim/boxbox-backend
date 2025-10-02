@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenResponse {
-    String refreshToken;
+public class LoginResponse {
+    String accessToken;
+    UserInfo user;
 }
