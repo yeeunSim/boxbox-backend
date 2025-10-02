@@ -22,8 +22,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -40,17 +38,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                // corsConfigurationSource() 를 명시적으로 사용
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api-docs/json").permitAll()
-                        .requestMatchers("/api-docs/json/swagger-config").permitAll()
-                        .requestMatchers("/v3/api-docs").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api-docs/json","/api-docs/json/swagger-config").permitAll()
+                        .requestMatchers("/v3/api-docs","/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/swagger-ui.index.html").permitAll()
-                        .requestMatchers("/login/**").permitAll()
-                        .requestMatchers("/sign-up/**").permitAll()
+                        .requestMatchers("/swagger-ui/index.html").permitAll() // ← 오타 수정 권장
+                        .requestMatchers("/login/**","/sign-up/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().permitAll()
@@ -78,10 +74,12 @@ public class SecurityConfig {
                 "http://172.30.1.69:3000"
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+        // 필요시 구체화: Authorization, Content-Type 등
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setExposedHeaders(List.of("Authorization","RefreshToken"));
         cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
