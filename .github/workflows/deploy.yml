@@ -50,11 +50,30 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_PRIVATE_KEY }}
           script: |
-            set -euo pipefail
+            set -Eeuo pipefail
             APP_DIR=/root/deploy
-            LATEST_JAR=$(ls -1t $APP_DIR/*.jar | head -n1)
-            echo "LATEST_JAR=$LATEST_JAR"
-            ln -sfn "$LATEST_JAR" "$APP_DIR/boxbox-latest.jar
+            TARGET="$APP_DIR/boxbox-latest.jar"
+            
+            # 최신 JAR: 심볼릭 링크/타깃 제외, 실제 파일만
+            LATEST_JAR=$(
+              find "$APP_DIR" -maxdepth 1 -type f -name "*.jar" ! -path "$TARGET" \
+                -printf '%T@ %p\n' | sort -nr | awk 'NR==1{print $2}'
+            )
+            echo "LATEST_JAR=${LATEST_JAR:-<none>}"
+  
+            if [[ -n "${LATEST_JAR:-}" ]]; then
+              SRC_REAL="$(readlink -f "$LATEST_JAR")"
+              TGT_REAL="$(readlink -f "$TARGET" 2>/dev/null || true)"
+              if [[ "$SRC_REAL" != "$TGT_REAL" ]]; then
+                ln -sfn "$SRC_REAL" "$TARGET"
+                echo "Updated symlink: $TARGET -> $SRC_REAL"
+              else
+                echo "Symlink already up-to-date."
+              fi
+            else
+              echo "No JAR found to link."
+            fi
+  
             sudo systemctl daemon-reload
             sudo systemctl restart boxbox.service
             sudo systemctl status boxbox.service --no-pager || true
