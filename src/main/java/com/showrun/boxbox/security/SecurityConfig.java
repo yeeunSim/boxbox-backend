@@ -39,7 +39,6 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 // corsConfigurationSource() 를 명시적으로 사용
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api-docs/json","/api-docs/json/swagger-config").permitAll()
@@ -63,25 +62,5 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of(
-                "http://localhost:3000","http://127.0.0.1:3000",
-                "http://localhost:5173","http://127.0.0.1:5173",
-                "http://172.30.1.69:3000"
-        ));
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-        // 필요시 구체화: Authorization, Content-Type 등
-        cfg.setAllowedHeaders(List.of("*"));
-        cfg.setExposedHeaders(List.of("Authorization","RefreshToken"));
-        cfg.setAllowCredentials(true);
-        cfg.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg);
-        return source;
     }
 }
