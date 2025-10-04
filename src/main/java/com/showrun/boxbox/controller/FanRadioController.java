@@ -94,8 +94,8 @@ public class FanRadioController {
     public ResponseEntity<ApiResponse<List<FanRadioResponse>>> getMyFanRadios(
             @AuthenticationPrincipal JwtUserDetails userDetails
     ) {
-        String loginEmail = userDetails.getUsername();
-        List<FanRadioResponse> radios = fanRadioService.getMyRadios(loginEmail);
+        Long userSn = userDetails.getUserSn();
+        List<FanRadioResponse> radios = fanRadioService.getMyRadios(userSn);
         return ResponseEntity.ok(ApiResponse.ok("내 라디오 목록 조회 성공", radios));
     }
 }
