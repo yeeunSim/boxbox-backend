@@ -163,9 +163,9 @@ public class FanRadioServiceImpl implements FanRadioService {
     private record Translation(String kor, String eng) {}
 
     @Override
-    public List<FanRadioResponse> getMyRadios(String loginEmail) {
-        User user = userRepository.findByLogin_LoginEmail(loginEmail)
-                .orElseThrow(() -> new IllegalArgumentException("user not found" + loginEmail));
+    public List<FanRadioResponse> getMyRadios(Long userSn) {
+        User user = userRepository.findById(userSn)
+                .orElseThrow(() -> new IllegalArgumentException("user not found:" + userSn));
 
         List<FanRadio> radios = fanRadioRepository
                 .myAllList(user.getUserNickname());

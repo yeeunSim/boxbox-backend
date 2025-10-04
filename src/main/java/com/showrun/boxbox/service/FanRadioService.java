@@ -27,5 +27,5 @@ public interface FanRadioService {
 
     Slice<FanRadioRankResponse> searchRadios(String nickname, RadioSortType sort, Pageable pageable);
 
-    List<FanRadioResponse> getMyRadios(String loginEmail);
+    List<FanRadioResponse> getMyRadios(Long loginEmail);
 }
