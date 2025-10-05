@@ -113,11 +113,12 @@ public class FanRadioServiceImpl implements FanRadioService {
     }
 
     @Override
-    public FanRadioResponse getRadioByRadioSn(Long radioSn) {
-        FanRadio fanRadio = fanRadioRepository.findById(radioSn)
-                .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
+    public FanRadioDetailResponse getRadioByRadioSn(Long radioSn, Long userSn) {
+        FanRadioDetailProjection fanRadio = fanRadioRepository.findDetailWithLikeYn(radioSn, userSn);
 
-        return FanRadioResponse.from(fanRadio);
+        if(fanRadio == null) throw new BoxboxException(ErrorCode.RADIO_NOT_FOUND);
+
+        return FanRadioDetailResponse.from(fanRadio);
     }
 
     @Override
