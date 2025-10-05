@@ -86,7 +86,7 @@ public class FanRadioController {
             @AuthenticationPrincipal JwtUserDetails userDetails,
             @PathVariable Long radioSn
     ) {
-        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn, userDetails.getUserSn()));
+        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn, userDetails == null ? null : userDetails.getUserSn()));
     }
 
     @GetMapping("/my-page/radio-list")
