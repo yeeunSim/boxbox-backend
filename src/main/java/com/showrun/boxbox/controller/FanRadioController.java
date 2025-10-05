@@ -14,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -84,10 +82,11 @@ public class FanRadioController {
     }
 
     @GetMapping("/podium/radio/{radioSn}")
-    public ResponseEntity<FanRadioResponse> getRadioByRadioSn(
+    public ResponseEntity<FanRadioDetailResponse> getRadioByRadioSn(
+            @AuthenticationPrincipal JwtUserDetails userDetails,
             @PathVariable Long radioSn
     ) {
-        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn));
+        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn, userDetails.getUserSn()));
     }
 
     @GetMapping("/my-page/radio-list")
