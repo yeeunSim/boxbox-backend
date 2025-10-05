@@ -1,6 +1,7 @@
 package com.showrun.boxbox.controller;
 
 import com.showrun.boxbox.dto.login.LoginRequest;
+import com.showrun.boxbox.dto.user.LoginResponse;
 import com.showrun.boxbox.dto.user.TokenResponse;
 import com.showrun.boxbox.service.LoginService;
 import jakarta.validation.Valid;
@@ -19,7 +20,7 @@ public class LoginController {
     private final LoginService loginService;
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(loginService.login(loginRequest.getLoginEmail(), loginRequest.getLoginPw()));
     }
 

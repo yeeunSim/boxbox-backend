@@ -106,18 +106,19 @@ public class FanRadioServiceImpl implements FanRadioService {
         List<DriverNumberProjection> driverNumberList = fanRadioRepository.getDriverNumberList();
 
         return driverNumberList.stream().map(
-                p -> new DriverNumberListResponse(
-                        p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
-                ))
+                        p -> new DriverNumberListResponse(
+                                p.getRadioSn(), p.getRadioNum(), p.getRadioNickname(), p.getRadioTextEng(), p.getRadioTextKor()
+                        ))
                 .toList();
     }
 
     @Override
-    public FanRadioResponse getRadioByRadioSn(Long radioSn) {
-        FanRadio fanRadio = fanRadioRepository.findById(radioSn)
-                .orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
+    public FanRadioDetailResponse getRadioByRadioSn(Long radioSn, Long userSn) {
+        FanRadioDetailProjection fanRadio = fanRadioRepository.findDetailWithLikeYn(radioSn, userSn);
 
-        return FanRadioResponse.from(fanRadio);
+        if(fanRadio == null) throw new BoxboxException(ErrorCode.RADIO_NOT_FOUND);
+
+        return FanRadioDetailResponse.from(fanRadio);
     }
 
     @Override
@@ -163,9 +164,9 @@ public class FanRadioServiceImpl implements FanRadioService {
     private record Translation(String kor, String eng) {}
 
     @Override
-    public List<FanRadioResponse> getMyRadios(String loginEmail) {
-        User user = userRepository.findByLogin_LoginEmail(loginEmail)
-                .orElseThrow(() -> new IllegalArgumentException("user not found" + loginEmail));
+    public List<FanRadioResponse> getMyRadios(Long userSn) {
+        User user = userRepository.findById(userSn)
+                .orElseThrow(() -> new IllegalArgumentException("user not found:" + userSn));
 
         List<FanRadio> radios = fanRadioRepository
                 .myAllList(user.getUserNickname());

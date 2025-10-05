@@ -17,7 +17,7 @@ public interface FanRadioService {
 
     List<DriverNumberListResponse> getDriverNumberList();
 
-    FanRadioResponse getRadioByRadioSn(Long radioSn);
+    FanRadioDetailResponse getRadioByRadioSn(Long radioSn, Long userSn);
 
     FanRadioResponse patchRadio(String loginEmail, Long radioSn, FanRadioPatchRequest request);
 
@@ -27,5 +27,5 @@ public interface FanRadioService {
 
     Slice<FanRadioRankResponse> searchRadios(String nickname, RadioSortType sort, Pageable pageable);
 
-    List<FanRadioResponse> getMyRadios(String loginEmail);
+    List<FanRadioResponse> getMyRadios(Long loginEmail);
 }

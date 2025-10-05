@@ -14,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -83,19 +81,20 @@ public class FanRadioController {
         return ResponseEntity.ok(fanRadioService.getDriverNumberList());
     }
 
-    @GetMapping("/podium/radio/{radioSn}")
-    public ResponseEntity<FanRadioResponse> getRadioByRadioSn(
+    @GetMapping("/podium/{radioSn}")
+    public ResponseEntity<FanRadioDetailResponse> getRadioByRadioSn(
+            @AuthenticationPrincipal JwtUserDetails userDetails,
             @PathVariable Long radioSn
     ) {
-        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn));
+        return ResponseEntity.ok(fanRadioService.getRadioByRadioSn(radioSn, userDetails.getUserSn()));
     }
 
     @GetMapping("/my-page/radio-list")
     public ResponseEntity<ApiResponse<List<FanRadioResponse>>> getMyFanRadios(
             @AuthenticationPrincipal JwtUserDetails userDetails
     ) {
-        String loginEmail = userDetails.getUsername();
-        List<FanRadioResponse> radios = fanRadioService.getMyRadios(loginEmail);
+        Long userSn = userDetails.getUserSn();
+        List<FanRadioResponse> radios = fanRadioService.getMyRadios(userSn);
         return ResponseEntity.ok(ApiResponse.ok("내 라디오 목록 조회 성공", radios));
     }
 }

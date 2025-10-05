@@ -1,0 +1,10 @@
+# 빌드 산출물/캐시 제외
+**/target
+**/build
+**/.gradle
+**/.mvn
+**/.idea
+**/.vscode
+**/.DS_Store
+**/node_modules
+*.log

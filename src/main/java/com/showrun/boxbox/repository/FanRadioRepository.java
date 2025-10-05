@@ -2,6 +2,8 @@ package com.showrun.boxbox.repository;
 
 import com.showrun.boxbox.domain.FanRadio;
 import com.showrun.boxbox.dto.fanradio.DriverNumberProjection;
+import com.showrun.boxbox.dto.fanradio.FanRadioDetailProjection;
+import com.showrun.boxbox.dto.fanradio.FanRadioDetailResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -96,4 +98,20 @@ public interface FanRadioRepository extends JpaRepository<FanRadio, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE FanRadio fr SET fr.radioLikeCount = :likeCount WHERE fr.radioSn = :radioSn")
     int updateLikeCount(@Param("radioSn") Long radioSn, @Param("likeCount") int likeCount);
+
+    @Query(value = """
+        SELECT
+            fr.radio_sn AS radioSn,
+            fr.radio_text_kor AS radioTextKor,
+            fr.radio_text_eng AS radioTextEng,
+            fr.radio_nickname AS writerNickname,
+            EXISTS (
+                SELECT 1
+                FROM likes l
+                WHERE l.radio_sn = fr.radio_sn AND l.like_user_sn = :userSn
+            ) AS likeYn
+        FROM fan_radio fr
+        WHERE fr.radio_sn = :radioSn
+    """, nativeQuery = true)
+    FanRadioDetailProjection findDetailWithLikeYn(@Param("radioSn") Long radioSn, @Param("userSn") Long userSn);
 }
