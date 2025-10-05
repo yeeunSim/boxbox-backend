@@ -1,61 +1,42 @@
-name : Github Actions 실행
+name: Deploy to NCP (Push-only)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Github Repository 파일 불러오기
-        uses: actions/checkout@v4
+    env:
+      NCR_REGISTRY: ${{ secrets.NCR_REGISTRY }}      # ex) boxbox-container.kr.ncr.ntruss.com
+      NCR_NAMESPACE: ${{ secrets.NCR_NAMESPACE }}    # ex) boxbox
+      APP_NAME: ${{ secrets.APP_NAME }}              # ex) myapp
+      IMAGE: ${{ secrets.NCR_REGISTRY }}/${{ secrets.NCR_NAMESPACE }}/${{ secrets.APP_NAME }}
+      TAG: ${{ github.run_number }}-${{ github.sha }}
 
-      - name: JDK 17버전 설치
-        uses: actions/setup-java@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: application.properties 파일 만들기
-        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.properties
+      - run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.properties
+      - run: chmod +x ./gradlew
+      - run: ./gradlew clean build
 
-      - name: permission denied 이슈 해결
-        run: chmod +x ./gradlew
+      - uses: docker/setup-buildx-action@v3
 
-      - name: 테스트 및 빌드하기
-        run: ./gradlew clean build
-
-      - name: AWS Resource에 접근할 수 있게 AWS credentials 설정
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Login to NCR
+        uses: docker/login-action@v3
         with:
-          aws-region: ap-northeast-2
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          registry: ${{ env.NCR_REGISTRY }}
+          username: ${{ secrets.NCP_ACCESS_KEY }}   # MANAGER 권한
+          password: ${{ secrets.NCP_SECRET_KEY }}
 
-      - name: ECR에 로그인하기
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Docker 이미지 생성
-        run: docker build -t tripture-server .
-
-      - name: Docker 이미지에 Tag 붙이기
-        run: docker tag tripture-server ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
-
-      - name: ECR에 Docker 이미지 Push하기
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
-
-      - name: SSH로 EC2에 접속하기
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }} # EC2의 주소
-          username: ${{ secrets.EC2_USERNAME }} # EC2 접속 username
-          key: ${{ secrets.EC2_PRIVATE_KEY }} # EC2의 Key 파일의 내부 텍스트
-          script_stop: true
-          script: |
-            docker stop tripture-server || true
-            docker rm tripture-server || true
-            docker pull ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
-            docker run -d --name tripture-server -p 8080:8080 ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
+      - name: Build & Push
+        run: |
+          docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"
