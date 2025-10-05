@@ -2,16 +2,12 @@ package com.showrun.boxbox.controller;
 
 import com.showrun.boxbox.dto.lang.LanguagePreferenceRequest;
 import com.showrun.boxbox.dto.user.UserInfo;
-import com.showrun.boxbox.exception.BoxboxException;
-import com.showrun.boxbox.exception.ErrorCode;
-import com.showrun.boxbox.repository.UserRepository;
 import com.showrun.boxbox.security.JwtUserDetails;
 import com.showrun.boxbox.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import com.showrun.boxbox.dto.common.ApiResponse;
 
@@ -43,5 +39,20 @@ public class UserController {
             // 알 수 없는 예외 → 언어설정 전용 에러코드로 래핑
             throw new BoxboxException(ErrorCode.LANG_CHANGE_FAILED, e);
         }
+    }
+
+    @GetMapping("/sign-up/nickname-check")
+    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestParam("nickname") String nickname) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("사용 가능한 닉네임입니다.", userService.ensureNicknameAvailable(nickname)));
+    }
+
+    @GetMapping("/sign-up/email-check")
+    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestParam("email") String email) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("사용 가능한 이메일입니다.", userService.ensureEmailAvailable(email))
+        );
     }
 }

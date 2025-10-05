@@ -62,8 +62,17 @@ public class JwtTokenProvider {
 
     public boolean validate(String jwt) {
         try {
-            // ★ 검증키 연결해서 파싱
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt);
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(jwt)
+                    .getPayload();
+
+            Date expiration = claims.getExpiration();
+            if (expiration.before(new Date())) {
+                return false;
+            }
+
             return true;
         } catch (Exception e) {
             return false;

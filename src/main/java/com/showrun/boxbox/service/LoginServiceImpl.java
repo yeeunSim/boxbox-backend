@@ -3,7 +3,9 @@ package com.showrun.boxbox.service;
 import com.showrun.boxbox.domain.Login;
 import com.showrun.boxbox.domain.Status;
 import com.showrun.boxbox.domain.User;
+import com.showrun.boxbox.dto.user.LoginResponse;
 import com.showrun.boxbox.dto.user.TokenResponse;
+import com.showrun.boxbox.dto.user.UserInfo;
 import com.showrun.boxbox.exception.BoxboxException;
 import com.showrun.boxbox.exception.ErrorCode;
 import com.showrun.boxbox.repository.LoginRepository;
@@ -38,7 +40,7 @@ public class LoginServiceImpl implements LoginService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public TokenResponse login(String loginEmail, String loginPassword) {
+    public LoginResponse login(String loginEmail, String loginPassword) {
         // 1) 인증
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginEmail, loginPassword)
@@ -66,7 +68,12 @@ public class LoginServiceImpl implements LoginService {
                 .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
         user.update(Status.ACTIVE, LocalDateTime.now());
 
-        return new TokenResponse(access, refresh);
+        UserInfo userInfo = UserInfo.builder()
+                .loginEmail(login.getLoginEmail())
+                .userNickname(user.getUserNickname())
+                .userGender(user.getUserGender()).build();
+
+        return new LoginResponse(access, userInfo);
     }
 
     @Transactional
@@ -96,7 +103,7 @@ public class LoginServiceImpl implements LoginService {
         Date refreshExp = jwtTokenProvider.getExpiration(newRefresh);
         login.update(newRefresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
-        return new TokenResponse(newAccess, newRefresh);
+        return new TokenResponse(newAccess);
     }
 
 }

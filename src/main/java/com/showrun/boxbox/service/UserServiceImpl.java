@@ -1,9 +1,7 @@
 package com.showrun.boxbox.service;
 
 
-import com.showrun.boxbox.domain.Gender;
 import com.showrun.boxbox.domain.Login;
-import com.showrun.boxbox.domain.Status;
 import com.showrun.boxbox.domain.User;
 import com.showrun.boxbox.dto.user.UserInfo;
 import com.showrun.boxbox.exception.BoxboxException;
@@ -16,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.util.regex.Pattern;
 
 import static com.showrun.boxbox.domain.Status.ACTIVE;
 
@@ -25,6 +23,9 @@ import static com.showrun.boxbox.domain.Status.ACTIVE;
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
+    private static final Pattern NICKNAME_RULE = Pattern.compile("^[A-Za-z0-9_]{1,10}$");
+    private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     private final UserRepository userRepository;
     private final LoginRepository loginRepository;
     private final PasswordEncoder passwordEncoder;
@@ -69,4 +70,37 @@ public class UserServiceImpl implements UserService {
             // DB, 트랜잭션 등 기타 예외 → 언어 설정 전용 코드로 래핑
             throw new BoxboxException(ErrorCode.LANG_CHANGE_FAILED, e);
         }
-}   }
+    }
+
+    @Override
+    @Transactional
+    public boolean ensureNicknameAvailable(String nickname) {
+        if (nickname == null || !NICKNAME_RULE.matcher(nickname).matches()) {
+            throw new BoxboxException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        boolean flag = userRepository.existsByUserNickname(nickname);
+
+        if (flag) {
+            throw new BoxboxException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean ensureEmailAvailable(String email) {
+        if (email == null || !EMAIL_RULE.matcher(email).matches()) {
+            throw new BoxboxException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        boolean flag = loginRepository.existsByLoginEmail(email);
+
+        if (flag) {
+            throw new BoxboxException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        return true;
+    }
+}

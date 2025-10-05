@@ -1,60 +1,42 @@
-name: boxbox test 배포
+name: Deploy to NCP (Push-only)
 
 on:
-  pull-request:
-    branches: [ beta-release ]
+  push:
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      NCR_REGISTRY: ${{ secrets.NCR_REGISTRY }}      # ex) boxbox-container.kr.ncr.ntruss.com
+      NCR_NAMESPACE: ${{ secrets.NCR_NAMESPACE }}    # ex) boxbox
+      APP_NAME: ${{ secrets.APP_NAME }}              # ex) myapp
+      IMAGE: ${{ secrets.NCR_REGISTRY }}/${{ secrets.NCR_NAMESPACE }}/${{ secrets.APP_NAME }}
+      TAG: ${{ github.run_number }}-${{ github.sha }}
+
     steps:
+      - uses: actions/checkout@v4
 
-      - name: 코드 가져오기
-        uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
 
+      - run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.properties
+      - run: chmod +x ./gradlew
+      - run: ./gradlew clean build
 
-      - name: JDK 21 설치
-        uses: actions/setup-java@v4
-                - with:
-                distribution: temurin
-                java-version: 21
+      - uses: docker/setup-buildx-action@v3
 
+      - name: Login to NCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.NCR_REGISTRY }}
+          username: ${{ secrets.NCP_ACCESS_KEY }}   # MANAGER 권한
+          password: ${{ secrets.NCP_SECRET_KEY }}
 
-      - name: 빌드
-        run: ./gradlew clean build -x test
-
-
-      - name: JAR 파일 찾기
-        id: artifact
-        run: echo "jar_file=$(ls build/libs/*SNAPSHOT.jar | head -n1)" >> $GITHUB_OUTPUT
-
-
-      - name: 서버로 JAR 업로드
-        uses: appleboy/scp-action@v0.1.7
-                - with:
-                host: ${{ secrets.NCP_HOST }}
-                username: ${{ secrets.NCP_USERNAME }}
-                key: ${{ secrets.NCP_PRIVATE_KEY }}
-                source: ${{ steps.artifact.outputs.jar_file }}
-                target: /opt/boxbox/app/releases/
-
-
-      - name: 서버에서 실행 교체
-        uses: appleboy/ssh-action@v1.0.3
-                - with:
-                host: ${{ secrets.NCP_HOST }}
-                username: ${{ secrets.NCP_USERNAME }}
-                key: ${{ secrets.NCP_PRIVATE_KEY }}
-    script: |
-      APP_DIR=/opt/boxbox/app
-      RELEASE_DIR=$APP_DIR/releases
-      LATEST_JAR=$(ls -1t $RELEASE_DIR/*.jar | head -n1)
-      
-        # 기존 프로세스 죽이기
-        pkill -f "java .*current.jar" || true
-      
-        # current.jar 링크 갱신
-        ln -sfn "$LATEST_JAR" $APP_DIR/current.jar
-      
-        # 새 jar 실행 (백그라운드)
-        nohup java -jar $APP_DIR/current.jar > $APP_DIR/app.out 2>&1 &
+      - name: Build & Push
+        run: |
+          docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"

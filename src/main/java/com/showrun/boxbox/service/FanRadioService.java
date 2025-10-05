@@ -1,5 +1,6 @@
 package com.showrun.boxbox.service;
 
+import com.showrun.boxbox.domain.FanRadio;
 import com.showrun.boxbox.dto.fanradio.DriverNumberListResponse;
 import com.showrun.boxbox.dto.fanradio.FanRadioDeleteResponse;
 import com.showrun.boxbox.dto.fanradio.FanRadioRequest;
@@ -16,7 +17,7 @@ public interface FanRadioService {
 
     List<DriverNumberListResponse> getDriverNumberList();
 
-    FanRadioResponse getRadioByRadioSn(Long radioSn);
+    FanRadioDetailResponse getRadioByRadioSn(Long radioSn, Long userSn);
 
     FanRadioResponse patchRadio(String loginEmail, Long radioSn, FanRadioPatchRequest request);
 
@@ -25,4 +26,6 @@ public interface FanRadioService {
     Slice<FanRadioRankResponse> getRadios(RadioSortType sort, Pageable pageable);
 
     Slice<FanRadioRankResponse> searchRadios(String nickname, RadioSortType sort, Pageable pageable);
+
+    List<FanRadioResponse> getMyRadios(Long loginEmail);
 }
