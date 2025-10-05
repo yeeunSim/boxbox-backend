@@ -1,64 +1,61 @@
-name: boxbox test 배포
+name : Github Actions 실행
 
 on:
   push:
-    branches: [ beta-release ]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-deploy
-  cancel-in-progress: false
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-
-      - name: 코드 가져오기
+      - name: Github Repository 파일 불러오기
         uses: actions/checkout@v4
 
-
-      - name: JDK 21 설치
+      - name: JDK 17버전 설치
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
-
+          java-version: 17
 
       - name: application.properties 파일 만들기
         run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.properties
 
-      - name: 빌드
-        run: ./gradlew clean build -x test
+      - name: permission denied 이슈 해결
+        run: chmod +x ./gradlew
 
+      - name: 테스트 및 빌드하기
+        run: ./gradlew clean build
 
-      - name: JAR 파일 찾기
-        id: artifact
-        run: echo "jar_file=$(ls -1t build/libs/*SNAPSHOT.jar | head -n1)" >> $GITHUB_OUTPUT
-
-
-      - name: 서버로 JAR 업로드
-        uses: appleboy/scp-action@v0.1.7
+      - name: AWS Resource에 접근할 수 있게 AWS credentials 설정
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USER }}
-          key: ${{ secrets.NCP_PRIVATE_KEY }}
-          source: ${{ steps.artifact.outputs.jar_file }}
-          target: /root/deploy/
+          aws-region: ap-northeast-2
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: ECR에 로그인하기
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: 서버에서 실행 교체
+      - name: Docker 이미지 생성
+        run: docker build -t tripture-server .
+
+      - name: Docker 이미지에 Tag 붙이기
+        run: docker tag tripture-server ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
+
+      - name: ECR에 Docker 이미지 Push하기
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
+
+      - name: SSH로 EC2에 접속하기
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USER }}
-          key: ${{ secrets.NCP_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST }} # EC2의 주소
+          username: ${{ secrets.EC2_USERNAME }} # EC2 접속 username
+          key: ${{ secrets.EC2_PRIVATE_KEY }} # EC2의 Key 파일의 내부 텍스트
+          script_stop: true
           script: |
-            APP_DIR=/root/deploy/
-            LATEST_JAR=$(ls -1t $APP_DIR/libs/*.jar | head -n1)
-            
-            ln -sfn "$LATEST_JAR" $APP_DIR/boxbox-0.0.1-SNAPSHOT.jar
-  
-            sudo systemctl daemon-reload
-            sudo systemctl restart boxbox.service
-  
-            sudo systemctl status boxbox.service --no-pager
+            docker stop tripture-server || true
+            docker rm tripture-server || true
+            docker pull ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest
+            docker run -d --name tripture-server -p 8080:8080 ${{ steps.login-ecr.outputs.registry }}/tripture-server:latest

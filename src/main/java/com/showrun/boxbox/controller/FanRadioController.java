@@ -81,7 +81,7 @@ public class FanRadioController {
         return ResponseEntity.ok(fanRadioService.getDriverNumberList());
     }
 
-    @GetMapping("/podium/radio/{radioSn}")
+    @GetMapping("/podium/{radioSn}")
     public ResponseEntity<FanRadioDetailResponse> getRadioByRadioSn(
             @AuthenticationPrincipal JwtUserDetails userDetails,
             @PathVariable Long radioSn
