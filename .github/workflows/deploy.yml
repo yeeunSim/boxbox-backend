@@ -36,7 +36,29 @@ jobs:
           password: ${{ secrets.NCP_SECRET_KEY }}
 
       - name: Build & Push
+        shell: bash
         run: |
-          docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
-          docker push "$IMAGE:$TAG"
-          docker push "$IMAGE:latest"
+          set -euo pipefail
+
+          clean() {
+            local v="$1"
+            v="${v//$'\n'/}"; v="${v//$'\r'/}"
+            v="${v#http://}"; v="${v#https://}"
+            v="${v%/}"; v="${v#/}"
+            printf '%s' "$v"
+          }
+
+          REG="$(clean "${NCR_REGISTRY:-}")"
+          NS="$(clean "${NCR_NAMESPACE:-}")"
+          APP="$(clean "${APP_NAME:-}")"
+
+          IMAGE_LC="$(echo "${REG}/${NS}/${APP}" | tr '[:upper:]' '[:lower:]')"
+
+          echo "Repo  : ${IMAGE_LC}"
+          echo "Tag   : ${TAG}"
+
+          echo -n "${IMAGE_LC}:${TAG}" | od -An -t x1
+
+          docker build -t "${IMAGE_LC}:${TAG}" -t "${IMAGE_LC}:latest" .
+          docker push "${IMAGE_LC}:${TAG}"
+          docker push "${IMAGE_LC}:latest"
