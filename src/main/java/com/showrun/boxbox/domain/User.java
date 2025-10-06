@@ -28,13 +28,12 @@ public class User {
     @Column(nullable = false, updatable = false, length = 10)
     private String userNickname;
 
-    @Column(nullable = false, updatable = false)
     private LocalDate userBirth;
 
     @Enumerated(EnumType.STRING)
     private Gender userGender;
 
-    @Column(nullable = false, columnDefinition = "TINYINT(1)")
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean svcUsePcyAgmtYn;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1)")
