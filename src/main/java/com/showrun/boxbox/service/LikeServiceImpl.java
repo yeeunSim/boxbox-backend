@@ -3,6 +3,8 @@ package com.showrun.boxbox.service;
 import com.showrun.boxbox.domain.FanRadio;
 import com.showrun.boxbox.domain.Like;
 import com.showrun.boxbox.dto.like.LikeToggleResponse;
+import com.showrun.boxbox.exception.BoxboxException;
+import com.showrun.boxbox.exception.ErrorCode;
 import com.showrun.boxbox.repository.FanRadioRepository;
 import com.showrun.boxbox.repository.LikeRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +43,9 @@ public class LikeServiceImpl implements LikeService {
             nowLiked = true;
         }
 
-        long likeCount = fanRadioRepository.findLikeCount(radioSn);
+        FanRadio newFanRadio = fanRadioRepository.findById(radioSn).orElseThrow(() -> new BoxboxException(ErrorCode.RADIO_NOT_FOUND));
 
-        return new LikeToggleResponse(nowLiked);
+        return new LikeToggleResponse(nowLiked, newFanRadio.getRadioLikeCount());
     }
 
 }
