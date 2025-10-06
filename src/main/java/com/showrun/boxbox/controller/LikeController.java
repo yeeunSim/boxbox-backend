@@ -21,13 +21,12 @@ public class LikeController {
     private final LikeService likeService;
 
     @PostMapping("/radio-like")
-    public ResponseEntity<ApiResponse<LikeToggleResponse>> toggle(
+    public ResponseEntity<LikeToggleResponse> toggle(
             @RequestBody LikeToggleRequest request,
             @AuthenticationPrincipal JwtUserDetails user
     ) {
         LikeToggleResponse result = likeService.toggleLike(request.getRadioSn(), user.getUserSn());
 
-        return ResponseEntity.ok(
-                ApiResponse.ok("처리 성공", result));
+        return ResponseEntity.ok(result);
     }
 }
