@@ -42,6 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 var user = new JwtUserDetails(userSn, email, List.of()); // 필요하면 권한 파싱
                 var auth = new UsernamePasswordAuthenticationToken(user, token, user.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                // ★ 무효/만료 토큰: 401 즉시 반환
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":\"AUTH_401\",\"message\":\"Invalid or expired token\"}");
+                return;
             }
         }
         chain.doFilter(request, response);
