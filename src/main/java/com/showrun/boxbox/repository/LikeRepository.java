@@ -2,20 +2,17 @@ package com.showrun.boxbox.repository;
 
 import com.showrun.boxbox.domain.Like;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
 
 public interface LikeRepository extends JpaRepository<Like, Long> {
 
-    @Query("select case when count(l)>0 then true else false end " +
-            "from Like l where l.fanRadio.radioSn = :radioSn and l.likeUserSn = :likeUserSn")
-    boolean exists(@Param("radioSn") Long radioSn, @Param("likeUserSn") Long likeUserSn);
+    // (radioSn, likeUserSn)로 존재 여부
+    boolean existsByFanRadio_radioSnAndLikeUserSn(Long radioSn, Long likeUserSn);
 
-    @Query("select count(l) from Like l where l.fanRadio.radioSn = :radioSn")
-    long countByRadio(@Param("radioSn") Long radioSn);
-
-    @Query("select l from Like l where l.fanRadio.radioSn = :radioSn and l.likeUserSn = :likeUserSn")
-    Optional<Like> findOne(@Param("radioSn") Long radioSn, @Param("likeUserSn") Long likeUserSn);
+    // (radioSn, likeUserSn)로 삭제 — 영향 행 수 반환
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    long deleteByFanRadio_radioSnAndLikeUserSn(Long radioSn, Long likeUserSn);
 }

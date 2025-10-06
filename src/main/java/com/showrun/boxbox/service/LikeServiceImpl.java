@@ -2,6 +2,7 @@ package com.showrun.boxbox.service;
 
 import com.showrun.boxbox.domain.FanRadio;
 import com.showrun.boxbox.domain.Like;
+import com.showrun.boxbox.dto.like.LikeToggleResponse;
 import com.showrun.boxbox.repository.FanRadioRepository;
 import com.showrun.boxbox.repository.LikeRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,21 +21,29 @@ public class LikeServiceImpl implements LikeService {
 
     @Override
     @Transactional
-    public Result toggleLike(Long radioSn, Long likeUserSn) {
+    public LikeToggleResponse toggleLike(Long radioSn, Long likeUserSn) {
         FanRadio fanRadio = fanRadioRepository.findAlive(radioSn)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 라디오입니다. radioSn=" + radioSn));
 
-        boolean exists = likeRepository.exists(radioSn, likeUserSn);
+        boolean exists = likeRepository.existsByFanRadio_radioSnAndLikeUserSn(radioSn, likeUserSn);
+
+        boolean nowLiked;
 
         if (exists) {
-            likeRepository.findOne(radioSn, likeUserSn).ifPresent(likeRepository::delete);
+            // 삭제 & -1
+            likeRepository.deleteByFanRadio_radioSnAndLikeUserSn(radioSn, likeUserSn);
+            fanRadioRepository.decrementLike(radioSn);
+            nowLiked = false;
         } else {
+            // 생성 & +1
             likeRepository.save(Like.create(fanRadio, likeUserSn));
+            fanRadioRepository.incrementLike(radioSn);
+            nowLiked = true;
         }
 
-        long count = likeRepository.countByRadio(radioSn);
-        fanRadioRepository.updateLikeCount(radioSn, (int) count);
+        long likeCount = fanRadioRepository.findLikeCount(radioSn);
 
-        return new Result(!exists, count);
+        return new LikeToggleResponse(nowLiked);
     }
+
 }

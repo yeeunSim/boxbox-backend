@@ -92,13 +92,6 @@ public interface FanRadioRepository extends JpaRepository<FanRadio, Long> {
             """)
     List<FanRadio> myAllList(@Param("userNickname") String userNickname);
 
-    @Query("SELECT fr FROM FanRadio fr WHERE fr.radioSn = :radioSn AND fr.radioDeletedYn = false")
-    Optional<FanRadio> findAlive(@Param("radioSn") Long radioSn);
-
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE FanRadio fr SET fr.radioLikeCount = :likeCount WHERE fr.radioSn = :radioSn")
-    int updateLikeCount(@Param("radioSn") Long radioSn, @Param("likeCount") int likeCount);
-
     @Query(value = """
         SELECT
             fr.radio_sn AS radioSn,
@@ -114,4 +107,26 @@ public interface FanRadioRepository extends JpaRepository<FanRadio, Long> {
         WHERE fr.radio_sn = :radioSn
     """, nativeQuery = true)
     FanRadioDetailProjection findDetailWithLikeYn(@Param("radioSn") Long radioSn, @Param("userSn") Long userSn);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                UPDATE FanRadio fr
+                   SET fr.radioLikeCount = fr.radioLikeCount + 1
+                 WHERE fr.radioSn = :radioSn
+            """)
+    int incrementLike(@Param("radioSn") Long radioSn);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                UPDATE FanRadio fr
+                   SET fr.radioLikeCount = CASE WHEN fr.radioLikeCount > 0 THEN fr.radioLikeCount - 1 else 0 end
+                 WHERE fr.radioSn = :radioSn
+            """)
+    int decrementLike(@Param("radioSn") Long radioSn);
+
+    @Query("SELECT fr.radioLikeCount FROM FanRadio fr WHERE fr.radioSn = :radioSn")
+    long findLikeCount(@Param("radioSn") Long radioSn);
+
+    @Query("SELECT fr FROM FanRadio fr WHERE fr.radioSn = :radioSn AND fr.radioDeletedYn = false")
+    Optional<FanRadio> findAlive(@Param("radioSn") Long radioSn);
 }
