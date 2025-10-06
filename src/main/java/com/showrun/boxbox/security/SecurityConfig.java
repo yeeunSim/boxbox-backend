@@ -60,8 +60,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(
-                "https://www.boxbox.kr"   // 프론트
-                // 개발용이 필요하면: "http://localhost:3000"
+                "https://www.boxbox.kr",   // 프론트
+                "http://localhost:3000"
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         cfg.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With"));
