@@ -14,7 +14,10 @@ import com.showrun.boxbox.security.JwtTokenProvider;
 import com.showrun.boxbox.security.JwtUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -40,7 +44,7 @@ public class LoginServiceImpl implements LoginService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public LoginResponse login(String loginEmail, String loginPassword) {
+    public ResponseEntity<LoginResponse> login(String loginEmail, String loginPassword) {
         // 1) 인증
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginEmail, loginPassword)
@@ -68,16 +72,26 @@ public class LoginServiceImpl implements LoginService {
                 .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
         user.update(Status.ACTIVE, LocalDateTime.now());
 
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
+                .httpOnly(true)
+                .secure(true) // 운영: true, 로컬 dev: false
+                .sameSite("Lax") // 크로스 도메인일 때. same-site면 "Lax"
+                .path("/refresh")
+                .maxAge(Duration.ofDays(14))
+                .build();
+
         UserInfo userInfo = UserInfo.builder()
                 .loginEmail(login.getLoginEmail())
                 .userNickname(user.getUserNickname())
                 .userGender(user.getUserGender()).build();
 
-        return new LoginResponse(access, userInfo);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new LoginResponse(access, userInfo));
     }
 
     @Transactional
-    public TokenResponse refresh(String refreshToken) {
+    public ResponseEntity<TokenResponse> refresh(String refreshToken) {
         // 1) 토큰 유효성
         if (!jwtTokenProvider.validate(refreshToken))
             throw new BoxboxException(ErrorCode.INVALID_TOKEN);
@@ -103,7 +117,17 @@ public class LoginServiceImpl implements LoginService {
         Date refreshExp = jwtTokenProvider.getExpiration(newRefresh);
         login.update(newRefresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
-        return new TokenResponse(newAccess);
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefresh)
+                .httpOnly(true)
+                .secure(true) // 운영: true, 로컬 dev: false
+                .sameSite("Lax") // 크로스 도메인일 때. same-site면 "Lax"
+                .path("/refresh")
+                .maxAge(Duration.ofDays(14))
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new TokenResponse(newAccess));
     }
 
 }

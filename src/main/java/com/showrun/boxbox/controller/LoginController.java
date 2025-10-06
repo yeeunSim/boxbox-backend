@@ -21,11 +21,11 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(loginService.login(loginRequest.getLoginEmail(), loginRequest.getLoginPw()));
+        return loginService.login(loginRequest.getLoginEmail(), loginRequest.getLoginPw());
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody String refreshToken) {
-        return ResponseEntity.ok(loginService.refresh(refreshToken));
+        return loginService.refresh(refreshToken);
     }
 }
