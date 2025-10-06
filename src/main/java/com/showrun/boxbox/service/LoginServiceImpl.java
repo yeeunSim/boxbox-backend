@@ -19,8 +19,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,45 +47,57 @@ public class LoginServiceImpl implements LoginService {
 
     @Transactional
     public ResponseEntity<LoginResponse> login(String loginEmail, String loginPassword) {
-        // 1) 인증
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginEmail, loginPassword)
-        );
-        JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
+        ResponseCookie cookie = null;
+        UserInfo userInfo = null;
+        String access = null;
 
-        Long userSn = principal.getUserSn();
-        String email = principal.getEmail();
+        try {
+            // 1) 인증
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginEmail, loginPassword)
+            );
+            JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
 
-        // 2) 액세스/리프레시 발급 (★ userSn 기반)
-        String access = jwtTokenProvider.createAccessToken(userSn, email, principal.getAuthorities());
-        String refresh = jwtTokenProvider.createRefreshToken(String.valueOf(userSn));
+            Long userSn = principal.getUserSn();
+            String email = principal.getEmail();
 
-        // 3) 리프레시 토큰 저장
-        Login login = loginRepository.findByLoginEmail(email)
-                .orElseThrow(() -> new BoxboxException(ErrorCode.LOGIN_FAILED));
+            // 2) 액세스/리프레시 발급 (★ userSn 기반)
+            access = jwtTokenProvider.createAccessToken(userSn, email, principal.getAuthorities());
+            String refresh = jwtTokenProvider.createRefreshToken(String.valueOf(userSn));
 
-        Date refreshExp = jwtTokenProvider.getExpiration(refresh);
-        // 비밀번호는 그대로 유지
-        login.update(login.getLoginPassword(), refresh, login.getSalt());
-        login.update(refresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
+            // 3) 리프레시 토큰 저장
+            Login login = loginRepository.findByLoginEmail(email)
+                    .orElseThrow(() -> new BoxboxException(ErrorCode.LOGIN_FAILED));
 
-        // 4) 마지막 로그인/상태 업데이트
-        User user = userRepository.findById(userSn)
-                .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
-        user.update(Status.ACTIVE, LocalDateTime.now());
+            Date refreshExp = jwtTokenProvider.getExpiration(refresh);
+            // 비밀번호는 그대로 유지
+            login.update(login.getLoginPassword(), refresh, login.getSalt());
+            login.update(refresh, LocalDateTime.ofInstant(refreshExp.toInstant(), java.time.ZoneId.systemDefault()));
 
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
-                .httpOnly(true)
-                .secure(true) // 운영: true, 로컬 dev: false
-                .sameSite("Lax") // 크로스 도메인일 때. same-site면 "Lax"
-                .path("/refresh")
-                .maxAge(Duration.ofDays(14))
-                .build();
+            // 4) 마지막 로그인/상태 업데이트
+            User user = userRepository.findById(userSn)
+                    .orElseThrow(() -> new BoxboxException(ErrorCode.NOT_FOUND));
+            user.update(Status.ACTIVE, LocalDateTime.now());
 
-        UserInfo userInfo = UserInfo.builder()
-                .loginEmail(login.getLoginEmail())
-                .userNickname(user.getUserNickname())
-                .userGender(user.getUserGender()).build();
+            cookie = ResponseCookie.from("refreshToken", refresh)
+                    .httpOnly(true)
+                    .secure(true) // 운영: true, 로컬 dev: false
+                    .sameSite("Lax") // 크로스 도메인일 때. same-site면 "Lax"
+                    .path("/refresh")
+                    .maxAge(Duration.ofDays(14))
+                    .build();
+
+            userInfo = UserInfo.builder()
+                    .loginEmail(login.getLoginEmail())
+                    .userNickname(user.getUserNickname())
+                    .userGender(user.getUserGender()).build();
+        } catch (BadCredentialsException e) {
+            // 비밀번호나 아이디가 틀렸을 때의 특정 에러코드 사용
+            throw new BoxboxException(ErrorCode.LOGIN_FAILED);
+        } catch (AuthenticationException e) {
+            // 기타 인증 관련 문제
+            throw new BoxboxException(ErrorCode.UNAUTHORIZED);
+        }
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
