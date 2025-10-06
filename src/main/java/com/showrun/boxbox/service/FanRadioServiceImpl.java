@@ -172,12 +172,7 @@ public class FanRadioServiceImpl implements FanRadioService {
                 .myAllList(user.getUserNickname());
 
         return radios.stream()
-                .map(r -> new FanRadioResponse(
-                        r.getRadioSn(),
-                        r.getRadioNickname(),
-                        r.getRadioTextKor(),
-                        r.getRadioTextEng()
-                ))
+                .map(r -> FanRadioResponse.from(r))
                 .toList();
     }
 }
