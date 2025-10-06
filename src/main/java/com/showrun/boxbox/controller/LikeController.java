@@ -25,10 +25,9 @@ public class LikeController {
             @RequestBody LikeToggleRequest request,
             @AuthenticationPrincipal JwtUserDetails user
     ) {
-        LikeService.Result result = likeService.toggleLike(request.getRadioSn(), user.getUserSn());
+        LikeToggleResponse result = likeService.toggleLike(request.getRadioSn(), user.getUserSn());
 
         return ResponseEntity.ok(
-                ApiResponse.ok("처리 성공", new LikeToggleResponse(result.liked(), result.likeCount()))
-        );
+                ApiResponse.ok("처리 성공", result));
     }
 }

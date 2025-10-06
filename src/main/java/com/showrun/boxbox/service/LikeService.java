@@ -1,8 +1,8 @@
 package com.showrun.boxbox.service;
 
+import com.showrun.boxbox.dto.like.LikeToggleResponse;
+
 public interface LikeService {
 
-    Result toggleLike(Long radioSn, Long likeUserSn);
-
-    record Result(boolean liked, long likeCount) {}
+    LikeToggleResponse toggleLike(Long radioSn, Long likeUserSn);
 }
