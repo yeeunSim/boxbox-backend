@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public boolean ensureEmailAvailable(String email) {
-        if (email == null || !EMAIL_RULE.matcher(email).matches()) {
+        if (email == null || email == '') {
             throw new BoxboxException(ErrorCode.VALIDATION_ERROR);
         }
 
