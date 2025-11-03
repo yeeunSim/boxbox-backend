@@ -2,6 +2,7 @@ package com.showrun.boxbox.service;
 
 import com.showrun.boxbox.domain.*;
 import com.showrun.boxbox.dto.fanradio.DriverNumberProjection;
+import com.showrun.boxbox.dto.fanradio.FanRadioDetailProjection;
 import com.showrun.boxbox.repository.FanRadioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +45,7 @@ public class FanRadioRespositoryTest {
 
     @Test
     @DisplayName("드라이버 넘버가 들어간 게시물 리스트 조회")
-    void getRadioListByDriverNumber() {
+    void getDriverNumberListTest() {
         //given
         FanRadio f1 = FanRadio.create(user1, user1.getUserNickname(), "KOR1", "ENG1", 22, false);
         FanRadio f2 = FanRadio.create(user1, user1.getUserNickname(), "KOR2", "ENG2", 20, false);
@@ -63,5 +64,22 @@ public class FanRadioRespositoryTest {
         //then
         assertThat(driverNumberList).hasSize(1);
         assertThat(driverNumberList.get(0).getRadioTextKor()).isEqualTo(f7.getRadioTextKor());
+    }
+
+    @Test
+    @DisplayName("라디오 단건 조회")
+    void findDetailWithLikeYnTest() {
+        //given
+        FanRadio f1 = FanRadio.create(user1, user1.getUserNickname(), "KOR1", "ENG1", 22, false);
+        Like like = Like.create(f1, user2.getUserSn());
+        em.persist(f1); em.persist(like);
+        em.flush(); em.clear();
+
+        //when
+        FanRadioDetailProjection detailWithLikeYn = fanRadioRepository.findDetailWithLikeYn(f1.getRadioSn(), user2.getUserSn());
+
+        //then
+        assertThat(detailWithLikeYn.getLikeYn()).isEqualTo(1);
+        assertThat(detailWithLikeYn.getWriterNickname()).isEqualTo(f1.getRadioNickname());
     }
 }
