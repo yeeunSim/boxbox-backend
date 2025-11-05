@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -284,5 +285,103 @@ class FanRadioServiceImplTest {
         when(fr.getRadioLikeCount()).thenReturn(like);
         when(fr.getRadioCreatedAt()).thenReturn(createdAt);
         return fr;
+    }
+
+    @Nested
+    @DisplayName("getMyRadios")
+    class GetMyRadios {
+
+        @Test
+        @DisplayName("유저가 없으면 IllegalArgumentException")
+        void throwsWhenUserNotFound() {
+            Long userSn = 10L;
+            when(userRepository.findById(userSn)).thenReturn(Optional.empty());
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sut.getMyRadios(userSn));
+
+            assertTrue(ex.getMessage().contains("user not found:" + userSn));
+            verify(userRepository).findById(userSn);
+            verifyNoMoreInteractions(userRepository);
+            verifyNoInteractions(fanRadioRepository, papagoService);
+        }
+
+        @Test
+        @DisplayName("유저의 닉네임으로 조회된 라디오들을 FanRadioResponse로 매핑한다(값/순서 검증)")
+        void mapsEntitiesToResponses() {
+            // given
+            Long userSn = 20L;
+            String nickname = "hamji";
+
+            User user = mock(User.class);
+            when(user.getUserNickname()).thenReturn(nickname);
+            when(userRepository.findById(userSn)).thenReturn(Optional.of(user));
+
+            // FanRadio 엔티티는 도메인 객체라 간단히 mock으로 게터만 스텁
+            FanRadio r1 = mock(FanRadio.class);
+            when(r1.getRadioSn()).thenReturn(101L);
+            when(r1.getRadioNickname()).thenReturn("hamji");
+            when(r1.getRadioTextKor()).thenReturn("안녕");
+            when(r1.getRadioTextEng()).thenReturn("Hello");
+
+            FanRadio r2 = mock(FanRadio.class);
+            when(r2.getRadioSn()).thenReturn(102L);
+            when(r2.getRadioNickname()).thenReturn("hamji");
+            when(r2.getRadioTextKor()).thenReturn("좋은 하루");
+            when(r2.getRadioTextEng()).thenReturn("Have a nice day");
+
+            when(fanRadioRepository.myAllList(nickname)).thenReturn(List.of(r1, r2));
+
+            // when
+            List<FanRadioResponse> result = sut.getMyRadios(userSn);
+
+            // then
+            assertEquals(2, result.size());
+
+            // 첫 번째
+            FanRadioResponse a = result.get(0);
+            assertEquals(101L, a.getRadioSn());
+            assertEquals("hamji", a.getWriterNickname());
+            assertEquals("안녕", a.getRadioTextKor());
+            assertEquals("Hello", a.getRadioTextEng());
+
+            // 두 번째
+            FanRadioResponse b = result.get(1);
+            assertEquals(102L, b.getRadioSn());
+            assertEquals("hamji", b.getWriterNickname());
+            assertEquals("좋은 하루", b.getRadioTextKor());
+            assertEquals("Have a nice day", b.getRadioTextEng());
+
+            // 호출 순서/인자 검증
+            InOrder inOrder = inOrder(userRepository, fanRadioRepository);
+            inOrder.verify(userRepository).findById(userSn);
+            inOrder.verify(fanRadioRepository).myAllList(nickname);
+
+            verifyNoMoreInteractions(userRepository, fanRadioRepository);
+            verifyNoInteractions(papagoService);
+        }
+
+        @Test
+        @DisplayName("라디오가 없으면 빈 리스트 반환")
+        void returnsEmptyListWhenNoRadios() {
+            Long userSn = 30L;
+            String nickname = "zero";
+
+            User user = mock(User.class);
+            when(user.getUserNickname()).thenReturn(nickname);
+            when(userRepository.findById(userSn)).thenReturn(Optional.of(user));
+            when(fanRadioRepository.myAllList(nickname)).thenReturn(List.of());
+
+            List<FanRadioResponse> result = sut.getMyRadios(userSn);
+
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+
+            InOrder inOrder = inOrder(userRepository, fanRadioRepository);
+            inOrder.verify(userRepository).findById(userSn);
+            inOrder.verify(fanRadioRepository).myAllList(nickname);
+            verifyNoMoreInteractions(userRepository, fanRadioRepository);
+            verifyNoInteractions(papagoService);
+        }
     }
 }
