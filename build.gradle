@@ -2,6 +2,9 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.5'
 	id 'io.spring.dependency-management' version '1.1.7'
+
+	// 테스트 문서화를 위한 jacoco 추가
+	id 'jacoco'
 }
 
 group = 'com.showrun'
@@ -47,4 +50,9 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport // 테스트 완료 후 리포트 생성을 보장하기 위한 코드
+}
+
+jacocoTestReport {
+	dependsOn test
 }
