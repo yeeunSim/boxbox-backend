@@ -7,7 +7,7 @@
 ---
 
 ## 1. 프로젝트 소개 및 목적
->**주요 기능**: Event Day Count, 팬 라디오 메시징, 포디움, 다국어 번역(한/영) 지원
+>**주요 기능**: Event Day Count, 팬 라디오 메시지, 포디움, 다국어 번역(한/영) 지원
 - **팬 참여형 플랫폼**: Mercedes-AMG, Bottas 등 드라이버를 위한 실시간 응원 공간 제공
 - **F1 문화 확산**: 국내 팬 커뮤니티의 소통 경험 강화
 - **글로벌 소통**: 한/영 다국어 대응 환경 구축을 통한 글로벌 팀과의 연결성 확보
@@ -31,3 +31,15 @@
 | **PM / Design / BE** | **BE Lead / FE** | **BE / DB** | **FE Lead / Pub** |
 
 ---
+
+## 4. ERD 
+![img.png](img.png)
+
+---
+
+## 5. API 명세서
+https://docs.google.com/spreadsheets/d/1sGLEs21pAag91NYP_cBMMVPpkK-yFgLkD_tX6d7ogNg/edit?usp=sharing
+
+---
+
+## 6. 기술 스택
