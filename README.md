@@ -43,3 +43,4 @@ https://docs.google.com/spreadsheets/d/1sGLEs21pAag91NYP_cBMMVPpkK-yFgLkD_tX6d7o
 ---
 
 ## 6. 기술 스택
+![img.png](img.png)
